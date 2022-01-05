@@ -4,42 +4,52 @@ set -e
 ok=0
 fail=0
 
-expect_success() {
+start_test() {
     local name="$1"
 
     echo
     echo "testing $name:"
+}
+
+succeed_test() {
+    echo "test OK"
+    ok=$((ok + 1))
+}
+
+fail_test() {
+    echo "test FAILED"
+    fail=$((fail + 1))
+}
+
+expect_success() {
+    local name="$1"
+
+    start_test "$name"
 
     if diff -Narup "$name".expected <(../depot.pl "$name".input); then
-	echo "test OK"
-	ok=$((ok + 1))
+	succeed_test
     else
-	echo "test FAILED"
-	fail=$((fail + 1))
+	fail_test
     fi
 }
 
 expect_error() {
     local name="$1" expected_error="$2"
 
-    echo
-    echo "testing $name:"
+    start_test "$name"
 
     local actual_error
     if ! actual_error=$(../depot.pl "$name".input 2>&1 1>/dev/null) ; then
 	if [[ $actual_error == *"$expected_error"* ]]; then
-	    echo "test OK"
-	    ok=$((ok + 1))
+	    succeed_test
 	else
 	    echo "got wrong error message:"
 	    diff -Narup <(echo "$expected_error") <(echo "$actual_error") || true
-	    echo "test FAILED"
-	    fail=$((fail + 1))
+	    fail_test
 	fi
     else
 	echo "command succeeded unexpectedly"
-	echo "test FAILED"
-	fail=$((fail + 1))
+	fail_test
     fi
 }
 
