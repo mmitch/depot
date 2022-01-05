@@ -1,3 +1,11 @@
+# define funds
+
++FUND fund_A
++FUND fund_B
++FUND fund_C
+
+# transactions per day
+
 @@ 16.12.2020
 
 fund_A	+1,978 = 32,5    ! 1,21

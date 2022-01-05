@@ -241,6 +241,14 @@ sub import {
 	    $date = mktime($sec, $min, $hour, $mday, $mon, $year);
 	}
 	elsif ($line =~ /
+			\+FUND				# fixed marker
+			\s+				# separator
+			([a-zA-Z0-9_]+)			# fund name
+			/x) {
+	    my ($id) = ($1);
+	    $funds->{$id} = new Fund( id => $id );
+	}
+	elsif ($line =~ /
 			(\S+)				# fund
 			\s+				# separator
 			([+-][0-9]+(?:,[0-9]+)?)	# share amount with optional fraction, always signed
@@ -251,9 +259,7 @@ sub import {
 		    	/x) {
 
 	    my ($id, $shares, $cash, $fees) = ($1, $2, $3, $4);
-	    if (! exists $funds->{$id}) {
-		$funds->{$id} = new Fund( id => $id );
-	    }
+	    die "transaction for unknown fund `$id' in line $.\n" unless exists $funds->{$id};
 	    my $fund = $funds->{$id};
 
 	    $shares =~ tr/,/./;
