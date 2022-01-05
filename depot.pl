@@ -242,7 +242,7 @@ use POSIX qw(mktime);
 sub import {
     my $filename = shift;
 
-    my $funds = {};
+    my %funds;
     my $date;
 
     open my $fh, '<', $filename or die "can't open `$filename': $!";
@@ -263,7 +263,7 @@ sub import {
 			([a-zA-Z0-9_]+)			# fund name
 			/x) {
 	    my ($id) = ($1);
-	    $funds->{$id} = new Fund( id => $id );
+	    $funds{$id} = new Fund( id => $id );
 	}
 	elsif ($line =~ /
 			(\S+)				# fund
@@ -276,8 +276,8 @@ sub import {
 		    	/x) {
 
 	    my ($id, $shares, $cash, $fees) = ($1, $2, $3, $4);
-	    die "transaction for unknown fund `$id' in line $.\n" unless exists $funds->{$id};
-	    my $fund = $funds->{$id};
+	    die "transaction for unknown fund `$id' in line $.\n" unless exists $funds{$id};
+	    my $fund = $funds{$id};
 
 	    $shares =~ tr/,/./;
 	    $cash   =~ tr/,/./;
@@ -294,7 +294,7 @@ sub import {
 
     close $fh or die "can't close `$filename': $!";
 
-    return $funds;
+    return map { $funds{$_} } sort keys %funds;
 }
 
 
@@ -303,12 +303,12 @@ package TableFormatter;
 use Text::ASCIITable;
 
 sub short {
-    my %funds = %{$_[0]};
+    my @funds = @_;
 
     my $table = Text::ASCIITable->new();
     $table->setCols('ETF','Anteile','Wert', 'Kurs        (seit Start)', 'Gewinn        (relativ )', 'Stand');
     my ($total_cash, $total_invested);
-    foreach my $fund (map { $funds{$_} } sort keys %funds) {
+    foreach my $fund (@funds) {
 	my $ledger = $fund->ledger;
 	$table->addRow(
 	    $fund->id,
@@ -341,10 +341,10 @@ sub short {
 
 package main;
 
-my $funds = FileReader::import($ARGV[0] // 'depot.txt');
-die "no funds found" unless %{$funds};
+my @funds = FileReader::import($ARGV[0] // 'depot.txt');
+die "no funds found" unless @funds;
 
-print TableFormatter::short($funds);
+print TableFormatter::short(@funds);
 
 # TODO: print GnuPlots of Kursentwicklung und Gewinn/Verlustentwicklung
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
