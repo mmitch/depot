@@ -60,9 +60,19 @@ has rate   => ( is => 'lazy' );
 
 sub _build_rate {
     my $self = shift;
-    return $self->cash / $self->shares;
+    my $rate =  $self->cash / $self->shares;
+    return $rate < 0 ? -$rate : $rate;
 }
 
+sub is_buy {
+    my $self = shift;
+    return $self->shares > 0;
+}
+
+sub is_sell {
+    my $self = shift;
+    return $self->shares < 0;
+}
 
 
 package Ledger;
@@ -78,6 +88,7 @@ has fees           => ( is => 'lazy' );
 has rate           => ( is => 'lazy' );
 has rate_formatted       => ( is => 'lazy' );
 has bought         => ( is => 'lazy' );
+has sold           => ( is => 'lazy' );
 has invested       => ( is => 'lazy' );
 has d_rate_rel     => ( is => 'lazy' );
 has d_rate_rel_formatted => ( is => 'lazy' );
@@ -134,12 +145,17 @@ sub _build_rate_formatted {
 
 sub _build_bought {
     my $self = shift;
-    return $self->tx->cash + $self->_prev->bought;
+    return $self->_prev->bought + ($self->tx->is_buy  ? $self->tx->cash : 0);
+}
+
+sub _build_sold {
+    my $self = shift;
+    return $self->_prev->sold   + ($self->tx->is_sell ? $self->tx->cash : 0);
 }
 
 sub _build_invested {
     my $self = shift;
-    return $self->bought + $self->fees;
+    return $self->bought + $self->fees - $self->sold;
 }
 
 sub _build_d_rate_rel {
@@ -193,6 +209,7 @@ with 'MooX::Singleton';
 has tx     => ( is => 'lazy' );
 has shares => ( is => 'ro', default => 0 );
 has bought => ( is => 'ro', default => 0 );
+has sold   => ( is => 'ro', default => 0 );
 has fees   => ( is => 'ro', default => 0 );
 
 sub _build_tx {
@@ -327,3 +344,4 @@ print TableFormatter::short($funds);
 
 # TODO: print GnuPlots of Kursentwicklung und Gewinn/Verlustentwicklung
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
+# TODO: show colored output (red/green)?  looks nice in the git diff view ;)
