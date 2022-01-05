@@ -287,6 +287,9 @@ sub import {
 
 	    $fund->add_tx($tx);
 	}
+	else {
+	    die "unparseable line `$line' at line $.\n";
+	}
     }
 
     close $fh or die "can't close `$filename': $!";

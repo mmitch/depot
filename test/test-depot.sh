@@ -69,3 +69,4 @@ expect_success test-1-basic
 expect_error   test-2-undefined-fund "unknown fund \`missing_fund'"
 expect_error   test-3-empty-file     "no funds found"
 expect_error   test-4-file-not-found "can't open \`test-4-file-not-found.input'"
+expect_error   test-5-unknown-line   "unparseable line \`some random unparseable line'"
