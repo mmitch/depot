@@ -339,6 +339,7 @@ sub short {
 package main;
 
 my $funds = FileReader::import($ARGV[0] // 'depot.txt');
+die "no funds found" unless %{$funds};
 
 print TableFormatter::short($funds);
 
