@@ -298,6 +298,176 @@ sub import {
 }
 
 
+package Parallel;
+
+use threads;
+
+sub start {
+    my ($coderef, @params) = @_;
+    threads->create($coderef, @params);
+}
+
+sub wait_for_all {
+    foreach my $thr (threads->list()) {
+	$thr->join();
+    }
+}
+
+
+package Plotter;
+
+# Gnuplot does the right thing™ although months have different lengths
+my $SECONDS_PER_MONTH = 2592000;
+
+use constant PALETTE => [ qw( 1B7EBB D95F02 7570B3 E7298A 66A61E E6AB02 A6761D 666666 ) ];
+
+sub plot_all {
+    my @funds = @_;
+
+    Parallel::start(\&plot_d_rate, @funds);
+    Parallel::start(\&plot_d_cash, @funds);
+    Parallel::start(\&plot_cash, @funds);
+    Parallel::wait_for_all();
+}
+
+sub plot_d_rate {
+    my @funds = @_;
+
+    _plot_over_time(
+	'share price',
+	sub { my $tx = shift; return [ $tx->date, $tx->d_rate_rel ] },
+	@funds
+	);
+}
+
+sub plot_d_cash {
+    my @funds = @_;
+
+    _plot_over_time(
+	'win/loss',
+	sub { my $tx = shift; return [ $tx->date, $tx->d_cash_rel ] },
+	@funds
+	);
+}
+
+sub plot_cash {
+    my @funds = @_;
+
+    _plot_distribution(
+	'portfolio',
+	sub { my $fund = shift; return [ $fund->ledger->cash, $fund->ledger->cash_formatted . ' ' . $fund->id ] },
+	@funds
+	);
+}
+
+sub _plot_over_time {
+    my ($title, $mapper, @funds) = @_;
+
+    my $gnuplot = _open_gnuplot();
+
+    print $gnuplot <<~"EOF";
+	set title "$title"
+	set xdata time
+	set timefmt "%s"
+	set format x "%m/%Y"
+	set format y "%+-.0f%%"
+	set xtics $SECONDS_PER_MONTH*3
+	set key left
+	# grid
+	set style line 12 lc rgb'#808080' lt 0 lw 1
+	set grid back ls 12
+	EOF
+
+    my $i = 0;
+    printf $gnuplot "plot %s\n",
+	join(", ", map { sprintf "'-' using 1:2 title \"%s\" with lines lt 1 lw 2 lc rgb '#%s'", $_->{id}, PALETTE->[$i++] } @funds);
+
+    foreach my $fund (@funds) {
+	my @data;
+
+	my $tx = $fund->ledger;
+	while (defined $tx) {
+	    push @data, &$mapper($tx);
+	    $tx = $tx->prev;
+	}
+
+	my @sorted_data = sort { $a->[0] <=> $b->[0] } @data;
+
+	printf $gnuplot "%d %.3f\n", @{$_} foreach @sorted_data;
+
+	print $gnuplot "e\n";
+    }
+
+    _close_gnuplot($gnuplot);
+
+}
+
+sub _plot_distribution {
+    my ($title, $mapper, @funds) = @_;
+
+    my $gnuplot = _open_gnuplot();
+
+    print $gnuplot <<~"EOF";
+	set title "$title"
+	set size square
+	set xrange [-1.1:1.1]
+	set yrange [-1.1:1.1]
+	set style fill solid 1
+	set key Left reverse
+	unset tics
+	unset border
+	EOF
+
+    my $sum;
+    my @data = map {
+	my $fund = $_;
+	my $value = &$mapper($fund);
+	$sum += $value->[0];
+
+	# replace leading x spaces by a blank space of x zeroes width
+	$value->[1] =~ s/^( +)/_create_filler($1)/e;
+	$value;
+    } @funds;
+
+    my $i = 0;
+    printf $gnuplot "plot %s\n",
+	join(", ", map { sprintf "'-' title \"%s\" with circle lc rgb '#%s'", $_->[1], PALETTE->[$i++] } @data);
+
+    my $x = 0;
+    my $y = 0;
+    my $radius = 1;
+    my $angle_from = 0;
+    foreach my $data (@data) {
+
+	my $angle_to = $angle_from + ( 360.0 * $data->[0] / $sum );
+
+	printf $gnuplot "%d %d %d %d %d\n", $x, $y, $radius, $angle_from, $angle_to;
+	print  $gnuplot "e\n";
+
+	$angle_from = $angle_to;
+    }
+
+    _close_gnuplot($gnuplot);
+
+}
+
+sub _create_filler {
+    my $width = shift;
+    return sprintf '&{%s}', '0' x length $width;
+}
+
+sub _open_gnuplot {
+    open my $gnuplot, '|-', 'gnuplot -p - ' or die "can't pipe to gnuplot: $!";
+    return  $gnuplot;
+}
+
+sub _close_gnuplot {
+    my $gnuplot = shift;
+    print $gnuplot "pause mouse close\n";
+    close $gnuplot or die "can't close gnuplot: $!";
+}
+
+
 package TableFormatter;
 
 use Text::ASCIITable;
@@ -335,17 +505,26 @@ sub short {
 	''
 	);
 
-    return $table;
+    print $table;
 }
 
 
 package main;
 
+my $mode = \&TableFormatter::short;
+if (($ARGV[0] // '') eq '-plot') {
+    shift;
+    $mode = \&Plotter::plot_all;
+}
+
 my @funds = FileReader::import($ARGV[0] // 'depot.txt');
 die "no funds found" unless @funds;
 
-print TableFormatter::short(@funds);
+&$mode(@funds);
 
-# TODO: print GnuPlots of Kursentwicklung und Gewinn/Verlustentwicklung
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
 # TODO: show colored output (red/green)?  looks nice in the git diff view ;)
+# TODO: refactor: hide Ledger in Fund and move _formatted() to Fund
+# TODO: ensure strict date line during parsing of @@ (no need for sorting later)
+# TODO: add stacked barchart for wins/losses per fund
+# TODO: add explicit -normal output option

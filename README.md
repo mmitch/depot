@@ -25,12 +25,14 @@ If you can live with that: have fun!
 usage
 -----
 
-Calling convention is `depot.pl [transaction_file]`.
+Calling convention is `depot.pl [-plot] [transaction_file]`.
 If no *transaction_file* is given the default filename `depot.txt`
 will be used.
 
-`depot.pl` will read your transaction history and write a tabular
-summary of your portfolio to stdout.
+`depot.pl` will read your transaction history and by default write a
+tabular summary of your portfolio to stdout.
+
+`-plot` will call _gnuplot_ to render some diagrams instead.
 
 
 
