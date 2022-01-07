@@ -493,7 +493,7 @@ sub _close_gnuplot {
 }
 
 
-package TableFormatter;
+package TablePrinter;
 
 use Text::ASCIITable;
 
@@ -535,7 +535,7 @@ sub short {
 
 package main;
 
-my $mode = \&TableFormatter::short;
+my $mode = \&TablePrinter::short;
 my $first_arg = $ARGV[0] // '';
 
 if ($first_arg eq '-default') {
