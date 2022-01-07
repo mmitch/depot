@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+use locale;
 
 
 package Format;
