@@ -25,14 +25,20 @@ If you can live with that: have fun!
 usage
 -----
 
-Calling convention is `depot.pl [-plot] [transaction_file]`.
+Calling convention is `depot.pl [mode] [transaction_file]`.
+
+If no *mode* is given the default mode will be `-default` (see below).
+
 If no *transaction_file* is given the default filename `depot.txt`
 will be used.
 
-`depot.pl` will read your transaction history and by default write a
-tabular summary of your portfolio to stdout.
 
-`-plot` will call _gnuplot_ to render some diagrams instead.
+### modes
+
+ * `-default` writes a short tabular summary of your portfolio to
+   stdout.
+
+ * `-plot` calls _gnuplot_ to render some diagrams of your portfolio.
 
 
 

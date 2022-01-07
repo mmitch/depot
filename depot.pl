@@ -536,7 +536,12 @@ sub short {
 package main;
 
 my $mode = \&TableFormatter::short;
-if (($ARGV[0] // '') eq '-plot') {
+my $first_arg = $ARGV[0] // '';
+
+if ($first_arg eq '-default') {
+    shift;
+}
+elsif ($first_arg eq '-plot') {
     shift;
     $mode = \&Plotter::plot_all;
 }
@@ -549,4 +554,3 @@ die "no funds found" unless @funds;
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
 # TODO: show colored output (red/green)?  looks nice in the git diff view ;)
 # TODO: add stacked barchart for wins/losses per fund
-# TODO: add explicit -normal output option
