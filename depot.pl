@@ -81,6 +81,7 @@ package Ledger;
 use Moo;
 has tx         => ( is => 'ro', required => 1 );
 has prev       => ( is => 'ro');
+has first      => ( is => 'lazy' );
 has shares     => ( is => 'lazy' );
 has cash       => ( is => 'lazy' );
 has fees       => ( is => 'lazy' );
@@ -91,11 +92,15 @@ has invested   => ( is => 'lazy' );
 has d_rate_rel => ( is => 'lazy' );
 has d_cash_abs => ( is => 'lazy' );
 has d_cash_rel => ( is => 'lazy' );
-has first_rate => ( is => 'lazy' );
 
 sub date {
     my $self = shift;
     return $self->tx->date;
+}
+
+sub _build_first {
+    my $self = shift;
+    return $self->prev ? $self->prev->first : $self;
 }
 
 sub _build_shares {
@@ -135,7 +140,7 @@ sub _build_invested {
 
 sub _build_d_rate_rel {
     my $self = shift;
-    return (100 * $self->rate / $self->first_rate) - 100;
+    return (100 * $self->rate / $self->first->rate) - 100;
 }
 
 sub _build_d_cash_abs {
@@ -146,11 +151,6 @@ sub _build_d_cash_abs {
 sub _build_d_cash_rel {
     my $self = shift;
     return (100 * $self->cash / $self->invested) - 100;
-}
-
-sub _build_first_rate {
-    my $self = shift;
-    return $self->prev ? $self->prev->first_rate : $self->rate;
 }
 
 sub _prev {
