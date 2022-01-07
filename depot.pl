@@ -261,13 +261,11 @@ sub _get_over_time {
     
     my $tx = $self->_ledger;
     while (defined $tx) {
-	push @data, &$mapper($tx);
+	unshift @data, &$mapper($tx);
 	$tx = $tx->prev;
     }
 
-    my @sorted_data = sort { $a->[0] <=> $b->[0] } @data;
-    
-    return @sorted_data;
+    return @data;
 }
 
 
@@ -291,7 +289,9 @@ sub import {
 	if ($line =~ /@@ (\d{2})\.(\d{2})\.(\d{4})/) {
 	    my ($hour, $min, $sec) = (12, 0, 0);
 	    my ($mday, $mon, $year) = ($1, $2-1, $3-1900);
-	    $date = mktime($sec, $min, $hour, $mday, $mon, $year);
+	    my $newdate = mktime($sec, $min, $hour, $mday, $mon, $year);
+	    die "date `$1.$2.$3' must be later than previous date in line $." unless (!defined $date or $newdate > $date);
+	    $date = $newdate;
 	}
 	elsif ($line =~ /
 			\+FUND				# fixed marker
@@ -419,9 +419,8 @@ sub _plot_over_time {
 	join(", ", map { sprintf "'-' using 1:2 title \"%s\" with lines lt 1 lw 2 lc rgb '#%s'", $_->{id}, PALETTE->[$i++] } @funds);
 
     foreach my $fund (@funds) {
-	my @sorted_data = &$getter($fund);
-	printf $gnuplot "%d %.3f\n", @{$_} foreach @sorted_data;
-	print $gnuplot "e\n";
+	printf $gnuplot "%d %.3f\n", @{$_} foreach &$getter($fund);
+	print  $gnuplot "e\n";
     }
 
     _close_gnuplot($gnuplot);
@@ -549,6 +548,5 @@ die "no funds found" unless @funds;
 
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
 # TODO: show colored output (red/green)?  looks nice in the git diff view ;)
-# TODO: ensure strict date line during parsing of @@ (no need for sorting later)
 # TODO: add stacked barchart for wins/losses per fund
 # TODO: add explicit -normal output option
