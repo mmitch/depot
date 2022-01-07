@@ -78,34 +78,23 @@ sub is_sell {
 package Ledger;
 
 use Moo;
-has tx             => ( is => 'ro', required => 1 );
-has prev           => ( is => 'ro');
-has shares         => ( is => 'lazy' );
-has shares_formatted     => ( is => 'lazy' );
-has cash           => ( is => 'lazy' );
-has cash_formatted       => ( is => 'lazy' );
-has fees           => ( is => 'lazy' );
-has rate           => ( is => 'lazy' );
-has rate_formatted       => ( is => 'lazy' );
-has bought         => ( is => 'lazy' );
-has sold           => ( is => 'lazy' );
-has invested       => ( is => 'lazy' );
-has d_rate_rel     => ( is => 'lazy' );
-has d_rate_rel_formatted => ( is => 'lazy' );
-has d_cash_abs     => ( is => 'lazy' );
-has d_cash_abs_formatted => ( is => 'lazy' );
-has d_cash_rel     => ( is => 'lazy' );
-has d_cash_rel_formatted => ( is => 'lazy' );
-has first_rate     => ( is => 'lazy' );
+has tx         => ( is => 'ro', required => 1 );
+has prev       => ( is => 'ro');
+has shares     => ( is => 'lazy' );
+has cash       => ( is => 'lazy' );
+has fees       => ( is => 'lazy' );
+has rate       => ( is => 'lazy' );
+has bought     => ( is => 'lazy' );
+has sold       => ( is => 'lazy' );
+has invested   => ( is => 'lazy' );
+has d_rate_rel => ( is => 'lazy' );
+has d_cash_abs => ( is => 'lazy' );
+has d_cash_rel => ( is => 'lazy' );
+has first_rate => ( is => 'lazy' );
 
 sub date {
     my $self = shift;
     return $self->tx->date;
-}
-
-sub date_formatted {
-    my $self = shift;
-    return Format::date($self->date);
 }
 
 sub _build_shares {
@@ -113,19 +102,9 @@ sub _build_shares {
     return $self->tx->shares + $self->_prev->shares;
 }
 
-sub _build_shares_formatted {
-    my $self = shift;
-    return Format::shares($self->shares);
-}
-
 sub _build_cash {
     my $self = shift;
     return $self->shares * $self->tx->rate;
-}
-
-sub _build_cash_formatted {
-    my $self = shift;
-    return Format::cash($self->cash);
 }
 
 sub _build_fees {
@@ -136,11 +115,6 @@ sub _build_fees {
 sub _build_rate {
     my $self = shift;
     return $self->tx->rate;
-}
-
-sub _build_rate_formatted {
-    my $self = shift;
-    return Format::rate($self->rate);
 }
 
 sub _build_bought {
@@ -163,19 +137,9 @@ sub _build_d_rate_rel {
     return (100 * $self->rate / $self->first_rate) - 100;
 }
 
-sub _build_d_rate_rel_formatted {
-    my $self = shift;
-    return Format::rel($self->d_rate_rel);
-}
-
 sub _build_d_cash_abs {
     my $self = shift;
     return $self->cash - $self->invested;
-}
-
-sub _build_d_cash_abs_formatted {
-    my $self = shift;
-    return Format::cash($self->d_cash_abs);
 }
 
 sub _build_d_cash_rel {
@@ -186,11 +150,6 @@ sub _build_d_cash_rel {
 sub _build_first_rate {
     my $self = shift;
     return $self->prev ? $self->prev->first_rate : $self->rate;
-}
-
-sub _build_d_cash_rel_formatted {
-    my $self = shift;
-    return Format::rel($self->d_cash_rel);
 }
 
 sub _prev {
@@ -226,12 +185,89 @@ sub _build_tx {
 package Fund;
 
 use Moo;
-has id     => ( is => 'ro', required => 1 );
-has ledger => ( is => 'rwp' );
+has id                   => ( is => 'ro', required => 1 );
+has _ledger              => ( is => 'rw' );
 
 sub add_tx {
     my ($self, $tx) = @_;
-    $self->_set_ledger( new Ledger(tx => $tx, prev => $self->ledger) );
+    $self->_ledger( new Ledger(tx => $tx, prev => $self->_ledger) );
+}
+
+sub cash {
+    my $self = shift;
+    return $self->_ledger->cash;
+}
+
+sub invested {
+    my $self = shift;
+    return $self->_ledger->invested;
+}
+
+sub date_formatted {
+    my $self = shift;
+    return Format::date($self->_ledger->date);
+}
+
+sub shares_formatted {
+    my $self = shift;
+    return Format::shares($self->_ledger->shares);
+}
+
+sub cash_formatted {
+    my $self = shift;
+    return Format::cash($self->cash);
+}
+
+sub rate_formatted {
+    my $self = shift;
+    return Format::rate($self->_ledger->rate);
+}
+
+sub d_rate_rel_formatted {
+    my $self = shift;
+    return Format::rel($self->_ledger->d_rate_rel);
+}
+
+sub d_cash_abs_formatted {
+    my $self = shift;
+    return Format::cash($self->_ledger->d_cash_abs);
+}
+
+sub d_cash_rel_formatted {
+    my $self = shift;
+    return Format::rel($self->_ledger->d_cash_rel);
+}
+
+sub d_rate_rel_over_time {
+    my $self = shift;
+
+    return $self->_get_over_time(
+	sub { my ($tx) = @_; [ $tx->date, $tx->d_rate_rel ] }
+	);
+}
+
+sub d_cash_rel_over_time {
+    my $self = shift;
+
+    return $self->_get_over_time(
+	sub { my ($tx) = @_; [ $tx->date, $tx->d_cash_rel ] }
+	);
+}
+
+sub _get_over_time {
+    my ($self, $mapper) = @_;
+
+    my @data;
+    
+    my $tx = $self->_ledger;
+    while (defined $tx) {
+	push @data, &$mapper($tx);
+	$tx = $tx->prev;
+    }
+
+    my @sorted_data = sort { $a->[0] <=> $b->[0] } @data;
+    
+    return @sorted_data;
 }
 
 
@@ -324,28 +360,28 @@ use constant PALETTE => [ qw( 1B7EBB D95F02 7570B3 E7298A 66A61E E6AB02 A6761D 6
 sub plot_all {
     my @funds = @_;
 
-    Parallel::start(\&plot_d_rate, @funds);
-    Parallel::start(\&plot_d_cash, @funds);
+    Parallel::start(\&plot_d_rate_rel, @funds);
+    Parallel::start(\&plot_d_cash_rel, @funds);
     Parallel::start(\&plot_cash, @funds);
     Parallel::wait_for_all();
 }
 
-sub plot_d_rate {
+sub plot_d_rate_rel {
     my @funds = @_;
 
     _plot_over_time(
 	'share price',
-	sub { my $tx = shift; return [ $tx->date, $tx->d_rate_rel ] },
+	sub { my ($fund) = @_; $fund->d_rate_rel_over_time },
 	@funds
 	);
 }
 
-sub plot_d_cash {
+sub plot_d_cash_rel {
     my @funds = @_;
 
     _plot_over_time(
 	'win/loss',
-	sub { my $tx = shift; return [ $tx->date, $tx->d_cash_rel ] },
+	sub { my ($fund) = @_; $fund->d_cash_rel_over_time },
 	@funds
 	);
 }
@@ -355,13 +391,13 @@ sub plot_cash {
 
     _plot_distribution(
 	'portfolio',
-	sub { my $fund = shift; return [ $fund->ledger->cash, $fund->ledger->cash_formatted . ' ' . $fund->id ] },
+	sub { my ($fund) = @_; [ $fund->cash, $fund->cash_formatted . ' ' . $fund->id ] },
 	@funds
 	);
 }
 
 sub _plot_over_time {
-    my ($title, $mapper, @funds) = @_;
+    my ($title, $getter, @funds) = @_;
 
     my $gnuplot = _open_gnuplot();
 
@@ -383,18 +419,8 @@ sub _plot_over_time {
 	join(", ", map { sprintf "'-' using 1:2 title \"%s\" with lines lt 1 lw 2 lc rgb '#%s'", $_->{id}, PALETTE->[$i++] } @funds);
 
     foreach my $fund (@funds) {
-	my @data;
-
-	my $tx = $fund->ledger;
-	while (defined $tx) {
-	    push @data, &$mapper($tx);
-	    $tx = $tx->prev;
-	}
-
-	my @sorted_data = sort { $a->[0] <=> $b->[0] } @data;
-
+	my @sorted_data = &$getter($fund);
 	printf $gnuplot "%d %.3f\n", @{$_} foreach @sorted_data;
-
 	print $gnuplot "e\n";
     }
 
@@ -403,7 +429,7 @@ sub _plot_over_time {
 }
 
 sub _plot_distribution {
-    my ($title, $mapper, @funds) = @_;
+    my ($title, $getter, @funds) = @_;
 
     my $gnuplot = _open_gnuplot();
 
@@ -421,7 +447,7 @@ sub _plot_distribution {
     my $sum;
     my @data = map {
 	my $fund = $_;
-	my $value = &$mapper($fund);
+	my $value = &$getter($fund);
 	$sum += $value->[0];
 
 	# replace leading x spaces by a blank space of x zeroes width
@@ -479,18 +505,17 @@ sub short {
     $table->setCols('ETF','Anteile','Wert', 'Kurs        (seit Start)', 'Gewinn        (relativ )', 'Stand');
     my ($total_cash, $total_invested);
     foreach my $fund (@funds) {
-	my $ledger = $fund->ledger;
 	$table->addRow(
 	    $fund->id,
-	    $ledger->shares_formatted,
-	    $ledger->cash_formatted,
-	    Format::pair($ledger->rate_formatted,       $ledger->d_rate_rel_formatted),
-	    Format::pair($ledger->d_cash_abs_formatted, $ledger->d_cash_rel_formatted),
-	    $ledger->date_formatted,
+	    $fund->shares_formatted,
+	    $fund->cash_formatted,
+	    Format::pair($fund->rate_formatted,       $fund->d_rate_rel_formatted),
+	    Format::pair($fund->d_cash_abs_formatted, $fund->d_cash_rel_formatted),
+	    $fund->date_formatted,
 	    );
 
-	$total_cash     += $ledger->cash;
-	$total_invested += $ledger->invested;
+	$total_cash     += $fund->cash;
+	$total_invested += $fund->invested;
     }
     $table->addRowLine();
 
@@ -524,7 +549,6 @@ die "no funds found" unless @funds;
 
 # TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
 # TODO: show colored output (red/green)?  looks nice in the git diff view ;)
-# TODO: refactor: hide Ledger in Fund and move _formatted() to Fund
 # TODO: ensure strict date line during parsing of @@ (no need for sorting later)
 # TODO: add stacked barchart for wins/losses per fund
 # TODO: add explicit -normal output option
