@@ -76,3 +76,4 @@ expect_error   test-4-file-not-found "can't open \`test-4-file-not-found.input'"
 expect_error   test-5-unknown-line   "unparseable line \`some random unparseable line'"
 expect_error   test-6-backwards-date "date \`23.11.1962' must be later than previous date"
 expect_success test-7-default-mode   '-default'
+expect_success test-8-verbose-mode   '-verbose'

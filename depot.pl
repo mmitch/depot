@@ -49,6 +49,13 @@ sub shares {
     return sprintf '%8.3f St.', $_[0];
 }
 
+sub yearly_rel {
+    my ($duration, $rel) = @_;
+    return '' unless $duration;
+    my $warn = $duration < 1 ? '!!' : '  ';
+    return $warn . '  ' . Format::rel($rel);
+}
+
 
 package Transaction;
 
@@ -185,6 +192,8 @@ sub _build_tx {
 
 package Fund;
 
+use DateTime;
+
 use Moo;
 has id                   => ( is => 'ro', required => 1 );
 has _ledger              => ( is => 'rw' );
@@ -202,6 +211,26 @@ sub cash {
 sub invested {
     my $self = shift;
     return $self->_ledger->invested;
+}
+
+sub bought_formatted {
+    my $self = shift;
+    return Format::cash($self->_ledger->bought);
+}
+
+sub sold_formatted {
+    my $self = shift;
+    return Format::cash($self->_ledger->sold);
+}
+
+sub fees_formatted {
+    my $self = shift;
+    return Format::cash($self->_ledger->fees);
+}
+
+sub years_formatted {
+    my $self = shift;
+    return sprintf '%6.2f Jahre', $self->_years;
 }
 
 sub date_formatted {
@@ -224,6 +253,11 @@ sub rate_formatted {
     return Format::rate($self->_ledger->rate);
 }
 
+sub first_rate_formatted {
+    my $self = shift;
+    return Format::rate($self->_ledger->first->rate);
+}
+
 sub d_rate_rel_formatted {
     my $self = shift;
     return Format::rel($self->_ledger->d_rate_rel);
@@ -237,6 +271,16 @@ sub d_cash_abs_formatted {
 sub d_cash_rel_formatted {
     my $self = shift;
     return Format::rel($self->_ledger->d_cash_rel);
+}
+
+sub d_cash_rel_per_year_formatted {
+    my $self = shift;
+    return Format::yearly_rel($self->_years, $self->_d_cash_rel_per_year);
+}
+
+sub d_rate_rel_per_year_formatted {
+    my $self = shift;
+    return Format::yearly_rel($self->_years, $self->_d_rate_rel_per_year);
 }
 
 sub d_rate_rel_over_time {
@@ -267,6 +311,26 @@ sub _get_over_time {
     }
 
     return @data;
+}
+
+sub _years {
+    my $self = shift;
+    my $first = DateTime->from_epoch( epoch => $self->_ledger->first->date );
+    my $last  = DateTime->from_epoch( epoch => $self->_ledger->date );
+    my $duration = $last - $first;
+
+    # 31 days/month is an approximation, but it is of low magnitude in the result
+    return $duration->years + ($duration->months/12) + ($duration->days/31);
+}
+
+sub _d_cash_rel_per_year {
+    my $self = shift;
+    return $self->_ledger->d_cash_rel / $self->_years;
+}
+
+sub _d_rate_rel_per_year {
+    my $self = shift;
+    return $self->_ledger->d_rate_rel / $self->_years;
 }
 
 
@@ -533,6 +597,47 @@ sub short {
     print $table;
 }
 
+sub verbose {
+    my @funds = @_;
+
+    my $table = Text::ASCIITable->new(); # this has problems with UTF8 and multibyte characters :(
+    $table->setCols('ETF', map { shift->id } @funds);
+
+    my $data = [ $table, \@funds ];
+
+    _addRow($data, 'Stand',     sub { shift->date_formatted });
+    _addRow($data, 'Anteile',   sub { shift->shares_formatted });
+    $table->addRowLine();
+
+    _addRow($data, 'Kurs',      sub { shift->rate_formatted });
+    _addRow($data, '1. Kurs',   sub { shift->first_rate_formatted });
+    _addRow($data, '+- Kurs %', sub { shift->d_rate_rel_formatted });
+    $table->addRowLine();
+
+    _addRow($data, 'Gekauft',   sub { shift->bought_formatted });
+    _addRow($data, 'Verkauft',  sub { shift->sold_formatted });
+    _addRow($data, 'Gebuehren', sub { shift->fees_formatted });
+    $table->addRowLine();
+
+    _addRow($data, 'Wert',      sub { shift->cash_formatted });
+    _addRow($data, 'Gewinn',    sub { shift->d_cash_abs_formatted });
+    _addRow($data, 'Gewinn %',  sub { shift->d_cash_rel_formatted });
+    $table->addRowLine();
+
+    _addRow($data, 'Haltezeit', sub { shift->years_formatted });
+    _addRow($data, 'Gewinn/J.', sub { shift->d_cash_rel_per_year_formatted });
+    _addRow($data, '+-Kurs/J.', sub { shift->d_rate_rel_per_year_formatted });
+    $table->addRowLine();
+
+
+    print $table;
+}
+
+sub _addRow {
+    my ($data, $title, $getter) = @_;
+    $data->[0]->addRow( $title, map { &$getter($_) } @{$data->[1]} );
+}
+
 
 package main;
 
@@ -541,6 +646,10 @@ my $first_arg = $ARGV[0] // '';
 
 if ($first_arg eq '-default') {
     shift;
+}
+elsif ($first_arg eq '-verbose') {
+    shift;
+    $mode = \&TablePrinter::verbose;
 }
 elsif ($first_arg eq '-plot') {
     shift;
@@ -552,6 +661,6 @@ die "no funds found" unless @funds;
 
 &$mode(@funds);
 
-# TODO: show Performance pro Jahr (mit Marker, wenn jünger als 1 Jahr)
 # TODO: show colored output (red/green)?  looks nice in the git diff view ;)
 # TODO: add stacked barchart for wins/losses per fund
+# TODO: add total portfolio pseudo-fund to -verbose

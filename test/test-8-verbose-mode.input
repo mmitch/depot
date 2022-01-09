@@ -1,0 +1,29 @@
+# test with mode -verbose
+# aaa and bbb and multi-year fonds that show a yearly revenue etc.
+# zzz is not a full year old and thus gets a '!!' warning with the yearly values
+
++FUND aaa
++FUND bbb
++FUND zzz
+
+@@ 01.04.2020
+
+aaa +1 = 10 ! 1
+bbb +2 = 20 ! 2
+
+@@ 01.05.2021
+
+aaa +2 = 18 ! 1,8
+bbb +2 = 20 ! 2
+zzz +0,77 = 10,23 ! 0,51
+
+@@ 01.06.2021
+
+aaa +1 = 9 ! 0,9
+bbb +2 = 21,33 ! 2,13
+zzz +1,23 = 18,76 ! 0,94
+
+@@ 01.07.2021
+
+aaa +2 = 25 ! 2,5
+bbb +2 = 22,22 ! 2,22

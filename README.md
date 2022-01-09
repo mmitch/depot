@@ -38,6 +38,9 @@ will be used.
  * `-default` writes a short tabular summary of your portfolio to
    stdout.
 
+ * `-verbose` writes a more detailled tabuler summary of your
+   portfolio to stdout.
+
  * `-plot` calls _gnuplot_ to render some diagrams of your portfolio.
 
 
