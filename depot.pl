@@ -192,7 +192,7 @@ sub _build_tx {
 
 package Fund;
 
-use DateTime;
+use Module::Load;
 
 use Moo;
 has id                   => ( is => 'ro', required => 1 );
@@ -314,6 +314,8 @@ sub _get_over_time {
 }
 
 sub _years {
+    load "DateTime";
+
     my $self = shift;
     my $first = DateTime->from_epoch( epoch => $self->_ledger->first->date );
     my $last  = DateTime->from_epoch( epoch => $self->_ledger->date );
