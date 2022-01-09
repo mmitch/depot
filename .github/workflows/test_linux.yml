@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install cpanminus libmoo-perl libmoox-singleton-perl libtext-asciitable-perl
+          sudo apt-get install libdatetime-perl libmoo-perl libmoox-singleton-perl libtext-asciitable-perl
       - name: Test
         run: |
           make
