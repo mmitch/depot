@@ -417,7 +417,7 @@ sub wait_for_all {
 }
 
 
-package Plotter;
+package GnuPlot;
 
 # Gnuplot does the right thing™ although months have different lengths
 my $SECONDS_PER_MONTH = 2592000;
@@ -655,7 +655,7 @@ elsif ($first_arg eq '-verbose') {
 }
 elsif ($first_arg eq '-plot') {
     shift;
-    $mode = \&Plotter::plot_all;
+    $mode = \&GnuPlot::plot_all;
 }
 
 my @funds = FileReader::import($ARGV[0] // 'depot.txt');
