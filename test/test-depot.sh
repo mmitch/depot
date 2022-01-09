@@ -23,10 +23,11 @@ fail_test() {
 
 expect_success() {
     local name="$1"
+    shift
 
     start_test "$name"
 
-    if diff -Narup "$name".expected <(../depot.pl "$name".input); then
+    if diff -Narup "$name".expected <(../depot.pl "$@" "$name".input); then
 	succeed_test
     else
 	fail_test
@@ -74,3 +75,4 @@ expect_error   test-3-empty-file     "no funds found"
 expect_error   test-4-file-not-found "can't open \`test-4-file-not-found.input'"
 expect_error   test-5-unknown-line   "unparseable line \`some random unparseable line'"
 expect_error   test-6-backwards-date "date \`23.11.1962' must be later than previous date"
+expect_success test-7-default-mode   '-default'

@@ -1,0 +1,33 @@
+# test with mode -default
+# output should be the same as without any mode at all
+
+# define funds
+
++FUND fund_A
++FUND fund_B
++FUND fund_C
+
+# transactions per day
+
+@@ 18.12.2020
+
+fund_A	+1,978 = 32,5    ! 1,21
+fund_B	+0,316 = 35,72   ! 1,01
+
+@@ 12.01.2021
+
+fund_A	+1,722 = 32,5    ! 1,21
+
+@@ 15.01.2021
+
+fund_A	+1,812 = 32,5    ! 1,21
+fund_C +17,212 = 143,87  ! 4,13
+
+@@ 23.01.2021
+
+fund_A	-1,000 = 45,4    ! 0,8
+
+@@ 16.02.2021
+
+fund_A	+2,001 = 32,5    ! 1,21
+fund_B	+0,288 = 35,73   ! 1,02
