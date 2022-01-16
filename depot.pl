@@ -602,6 +602,9 @@ sub short {
 sub verbose {
     my @funds = @_;
 
+    use utf8;
+    binmode STDOUT, ':encoding(utf8)';
+
     my $table = Text::ASCIITable->new(); # this has problems with UTF8 and multibyte characters :(
     $table->setCols('ETF', map { shift->id } @funds);
 
@@ -613,7 +616,7 @@ sub verbose {
 
     _addRow($data, 'Kurs',      sub { shift->rate_formatted });
     _addRow($data, '1. Kurs',   sub { shift->first_rate_formatted });
-    _addRow($data, '+- Kurs %', sub { shift->d_rate_rel_formatted });
+    _addRow($data, '± Kurs %',  sub { shift->d_rate_rel_formatted });
     $table->addRowLine();
 
     _addRow($data, 'Gekauft',   sub { shift->bought_formatted });
@@ -628,7 +631,7 @@ sub verbose {
 
     _addRow($data, 'Haltezeit', sub { shift->years_formatted });
     _addRow($data, 'Gewinn/J.', sub { shift->d_cash_rel_per_year_formatted });
-    _addRow($data, '+-Kurs/J.', sub { shift->d_rate_rel_per_year_formatted });
+    _addRow($data, '± Kurs/J.', sub { shift->d_rate_rel_per_year_formatted });
     $table->addRowLine();
 
 
