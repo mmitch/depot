@@ -556,7 +556,7 @@ sub _plot_distribution {
 	set xrange [-1.1:1.1]
 	set yrange [-1.1:1.1]
 	set style fill solid 1
-	set key Left reverse
+	set key outside Left reverse
 	unset tics
 	unset border
 	EOF
