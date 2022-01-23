@@ -208,6 +208,11 @@ sub cash {
     return $self->_ledger->cash;
 }
 
+sub d_cash_abs {
+    my $self = shift;
+    return $self->_ledger->d_cash_abs;
+}
+
 sub invested {
     my $self = shift;
     return $self->_ledger->invested;
@@ -430,6 +435,7 @@ sub plot_all {
     Parallel::start(\&plot_d_rate_rel, @funds);
     Parallel::start(\&plot_d_cash_rel, @funds);
     Parallel::start(\&plot_cash, @funds);
+    Parallel::start(\&plot_plusminus, @funds);
     Parallel::wait_for_all();
 }
 
@@ -463,6 +469,16 @@ sub plot_cash {
 	);
 }
 
+sub plot_plusminus {
+    my @funds = @_;
+
+    _plot_stacked(
+	'win/loss by fund',
+	sub { my ($fund) = @_; $fund->d_cash_abs },
+	@funds
+	);
+}
+
 sub _plot_over_time {
     my ($title, $getter, @funds) = @_;
 
@@ -487,6 +503,41 @@ sub _plot_over_time {
 
     foreach my $fund (@funds) {
 	printf $gnuplot "%d %.3f\n", @{$_} foreach &$getter($fund);
+	print  $gnuplot "e\n";
+    }
+
+    _close_gnuplot($gnuplot);
+
+}
+
+sub _plot_stacked {
+    my ($title, $getter, @funds) = @_;
+
+    my $gnuplot = _open_gnuplot();
+
+    print $gnuplot <<~"EOF";
+	set title "$title"
+	set format y "%+-.2f EUR"
+	set key outside
+	set style data histogram
+	set style histogram rowstacked
+	set style fill solid border -1
+	set boxwidth 1.5
+	set xrange [-1:1]
+	set xzeroaxis lw 1 lt 1 lc black
+	unset xtics
+	# grid
+	set style line 12 lc rgb'#808080' lt 0 lw 1
+	set grid back ls 12
+	EOF
+
+    my $i = 0;
+    printf $gnuplot "plot %s\n",
+	join(", ", map { sprintf "'-' using 1 title \"%s\" lc rgb '#%s'", $_->{id}, PALETTE->[$i++] } @funds);
+
+    foreach my $fund (@funds) {
+	my $value = &$getter($fund);
+	printf $gnuplot "%.2f\n", $value;
 	print  $gnuplot "e\n";
     }
 
