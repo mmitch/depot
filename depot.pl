@@ -443,7 +443,7 @@ sub plot_d_rate_rel {
     my @funds = @_;
 
     _plot_over_time(
-	'share price',
+	'share price over time',
 	sub { my ($fund) = @_; $fund->d_rate_rel_over_time },
 	@funds
 	);
@@ -453,7 +453,7 @@ sub plot_d_cash_rel {
     my @funds = @_;
 
     _plot_over_time(
-	'win/loss',
+	'win/loss over time',
 	sub { my ($fund) = @_; $fund->d_cash_rel_over_time },
 	@funds
 	);
