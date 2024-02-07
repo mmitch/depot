@@ -371,6 +371,7 @@ sub import {
 			([a-zA-Z0-9_]+)			# fund name
 			/x) {
 	    my ($id) = ($1);
+	    die "duplicate fund `$id' at line $.\n" if exists $funds{$id};
 	    $funds{$id} = new Fund( id => $id );
 	}
 	elsif ($line =~ /

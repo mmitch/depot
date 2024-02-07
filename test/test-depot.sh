@@ -77,3 +77,4 @@ expect_error   test-5-unknown-line   "unparseable line \`some random unparseable
 expect_error   test-6-backwards-date "date \`23.11.1962' must be later than previous date"
 expect_success test-7-default-mode   '-default'
 expect_success test-8-verbose-mode   '-verbose'
+expect_error   test-9-duplicate-fund "duplicate fund \`fund_A'"
