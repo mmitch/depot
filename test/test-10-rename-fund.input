@@ -1,0 +1,17 @@
+# define funds
+
++FUND fund_A
++FUND fund_B
+
+# transactions per day
+
+@@ 18.12.2020
+
+fund_A	+1,978 = 32,5    ! 1,21
+fund_B	+0,316 = 35,72   ! 1,01
+
++RENAME fund_A fund_Z
+
+@@ 12.01.2021
+
+fund_Z	+1,722 = 32,5    ! 1,21

@@ -70,11 +70,15 @@ trap print_stats EXIT
 export LANG=C
 
 expect_success test-01-basic
-expect_error   test-02-undefined-fund "unknown fund \`missing_fund'"
-expect_error   test-03-empty-file     "no funds found"
-expect_error   test-04-file-not-found "can't open \`test-04-file-not-found.input'"
-expect_error   test-05-unknown-line   "unparseable line \`some random unparseable line'"
-expect_error   test-06-backwards-date "date \`23.11.1962' must be later than previous date"
-expect_success test-07-default-mode   '-default'
-expect_success test-08-verbose-mode   '-verbose'
-expect_error   test-09-duplicate-fund "duplicate fund \`fund_A'"
+expect_error   test-02-undefined-fund   "unknown fund \`missing_fund'"
+expect_error   test-03-empty-file       "no funds found"
+expect_error   test-04-file-not-found   "can't open \`test-04-file-not-found.input'"
+expect_error   test-05-unknown-line     "unparseable line \`some random unparseable line'"
+expect_error   test-06-backwards-date   "date \`23.11.1962' must be later than previous date"
+expect_success test-07-default-mode     '-default'
+expect_success test-08-verbose-mode     '-verbose'
+expect_error   test-09-duplicate-fund   "duplicate fund \`fund_A'"
+expect_success test-10-rename-fund
+expect_error   test-11-rename-missing   "rename: fund \`fund_A' does not exist"
+expect_error   test-12-rename-duplicate "rename: fund \`fund_Z' already exists"
+expect_error   test-13-rename-old-gone  "unknown fund \`fund_A'"

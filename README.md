@@ -61,6 +61,15 @@ transaction file format
    
    1. fund name
 
+ * `+RENAME some_fund`  
+   Lines starting with `+RENAME` rename an existing fund.  In later
+   lines it can only be used in transactions with the new name.
+
+   Rename attributes are (given in order, space-separated):
+
+   1. old fund name
+   2. new fund name
+
  * `@@ 24.12.2021`  
    Lines starting with `@@` define the calendar day to use for the
    next transactions.

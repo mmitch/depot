@@ -375,6 +375,19 @@ sub import {
 	    $funds{$id} = new Fund( id => $id );
 	}
 	elsif ($line =~ /
+			\+RENAME			# fixed marker
+			\s+				# separator
+			([a-zA-Z0-9_]+)			# source fund name
+			\s+				# separator
+			([a-zA-Z0-9_]+)			# target fund name
+			/x) {
+	    my ($from, $to) = ($1, $2);
+	    die "rename: fund `$from' does not exist at line $.\n" unless exists $funds{$from};
+	    die "rename: fund `$to' already exists at line $.\n" if exists $funds{$to};
+	    $funds{$to} = delete $funds{$from};
+	    $funds{$to}->{id} = $to;
+	}
+	elsif ($line =~ /
 			(\S+)				# fund
 			\s+				# separator
 			([+-][0-9]+(?:,[0-9]+)?)	# share amount with optional fraction, always signed
