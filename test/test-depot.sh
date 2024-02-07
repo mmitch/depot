@@ -69,12 +69,12 @@ trap print_stats EXIT
 # use standard locale for tests
 export LANG=C
 
-expect_success test-1-basic
-expect_error   test-2-undefined-fund "unknown fund \`missing_fund'"
-expect_error   test-3-empty-file     "no funds found"
-expect_error   test-4-file-not-found "can't open \`test-4-file-not-found.input'"
-expect_error   test-5-unknown-line   "unparseable line \`some random unparseable line'"
-expect_error   test-6-backwards-date "date \`23.11.1962' must be later than previous date"
-expect_success test-7-default-mode   '-default'
-expect_success test-8-verbose-mode   '-verbose'
-expect_error   test-9-duplicate-fund "duplicate fund \`fund_A'"
+expect_success test-01-basic
+expect_error   test-02-undefined-fund "unknown fund \`missing_fund'"
+expect_error   test-03-empty-file     "no funds found"
+expect_error   test-04-file-not-found "can't open \`test-04-file-not-found.input'"
+expect_error   test-05-unknown-line   "unparseable line \`some random unparseable line'"
+expect_error   test-06-backwards-date "date \`23.11.1962' must be later than previous date"
+expect_success test-07-default-mode   '-default'
+expect_success test-08-verbose-mode   '-verbose'
+expect_error   test-09-duplicate-fund "duplicate fund \`fund_A'"
